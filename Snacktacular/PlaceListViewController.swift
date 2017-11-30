@@ -50,6 +50,27 @@ class PlaceListViewController: UIViewController {
         }
     }
     
+    func loadData() {
+        db.collection("places").getDocuments { (querySnapshot, error) in
+            guard error == nil else {
+                print("error reading documents")
+                return
+            }
+            self.places = []
+            for document in (querySnapshot?.documents)! {
+                let placeDocumentID = document.documentID
+                let docData = document.data()
+                let placeName = docData["placeName"] as! String? ?? ""
+                let address = docData["address"] as! String? ?? ""
+                let postingID = docData["postingUserID"] as! String? ?? ""
+                let latitude = docData["latitude"] as! CLLocationDegrees? ?? 0.0
+                let longitude = docData["longitude"] as! CLLocationDegrees? ?? 0.0
+                let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                self.places.append(placeName: placeName, address: address, coordinate: coordinate, postingUserID: postingUserID, placeDocumentID: placeDocumentID)
+            }
+        }
+    }
+    
     func saveData(index: Int) {
         // Grab the unique userID
         if let postingUserID = (authUI.auth?.currentUser?.email) {
