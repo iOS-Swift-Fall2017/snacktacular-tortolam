@@ -9,6 +9,7 @@
 import UIKit
 import CoreLocation
 import MapKit
+import GooglePlaces
 
 class DetailViewController: UIViewController {
     
@@ -34,10 +35,11 @@ class DetailViewController: UIViewController {
         if let placeData = placeData {
             updateUserInterface()
             centerMap(mapLocation: placeData.coordinate, regionRadius: regionRadius)
+            mapView.removeAnnotations(mapView.annotations)
             mapView.addAnnotation(placeData)
             mapView.selectAnnotation(placeData, animated: true)
         } else {
-            placeData = PlaceData(placeName: "", address: "", coordinate: CLLocationCoordinate2D(), postingUserID: "")
+            placeData = PlaceData(placeName: "", address: "", coordinate: CLLocationCoordinate2D(), postingUserID: "", placeDocumentID: "")
             getLocation()
         }
         
@@ -67,6 +69,9 @@ class DetailViewController: UIViewController {
     }
     
     @IBAction func lookUpButtonPressed(_ sender: UIBarButtonItem) {
+        let autocompleteController = GMSAutocompleteViewController()
+        autocompleteController.delegate = self
+        present(autocompleteController, animated: true, completion: nil)
     }
     
     @IBAction func cancelButtonPressed(_ sender: UIBarButtonItem) {
@@ -159,4 +164,41 @@ extension DetailViewController: MKMapViewDelegate {
         }
         return view
     }
+}
+
+extension DetailViewController: GMSAutocompleteViewControllerDelegate {
+    
+    // Handle the user's selection.
+    func viewController(_ viewController: GMSAutocompleteViewController, didAutocompleteWith place: GMSPlace) {
+        placeData?.placeName = place.name
+        placeData?.coordinate = place.coordinate
+        placeData?.address = place.formattedAddress ?? "Unknown"
+        centerMap(mapLocation: (placeData?.coordinate)!, regionRadius: regionRadius)
+        mapView.removeAnnotations(mapView.annotations)
+        mapView.addAnnotation(self.placeData!)
+        mapView.selectAnnotation(self.placeData!, animated: true)
+        updateUserInterface()
+        
+        dismiss(animated: true, completion: nil)
+    }
+    
+    func viewController(_ viewController: GMSAutocompleteViewController, didFailAutocompleteWithError error: Error) {
+        // TODO: handle the error.
+        print("Error: ", error.localizedDescription)
+    }
+    
+    // User canceled the operation.
+    func wasCancelled(_ viewController: GMSAutocompleteViewController) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    // Turn the network activity indicator on and off again.
+    func didRequestAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+    }
+    
+    func didUpdateAutocompletePredictions(_ viewController: GMSAutocompleteViewController) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = false
+    }
+    
 }
