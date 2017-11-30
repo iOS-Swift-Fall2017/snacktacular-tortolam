@@ -40,6 +40,11 @@ class PlaceListViewController: UIViewController {
         signIn()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadData()
+    }
+    
     func signIn() {
         let providers: [FUIAuthProvider] = [
             FUIGoogleAuth()
@@ -47,6 +52,16 @@ class PlaceListViewController: UIViewController {
         if authUI.auth?.currentUser == nil {
             self.authUI?.providers = providers
             present(authUI.authViewController(), animated: true, completion: nil)
+        }
+    }
+    
+    func checkForUpdates() {
+        db.collection("places").addSnapshotListener { (querySnapshot, error) in
+            guard error == nil else {
+                print("ERROR: adding snapshot listener")
+                return
+            }
+            self.loadData()
         }
     }
     
@@ -62,12 +77,13 @@ class PlaceListViewController: UIViewController {
                 let docData = document.data()
                 let placeName = docData["placeName"] as! String? ?? ""
                 let address = docData["address"] as! String? ?? ""
-                let postingID = docData["postingUserID"] as! String? ?? ""
+                let postingUserID = docData["postingUserID"] as! String? ?? ""
                 let latitude = docData["latitude"] as! CLLocationDegrees? ?? 0.0
                 let longitude = docData["longitude"] as! CLLocationDegrees? ?? 0.0
                 let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                self.places.append(placeName: placeName, address: address, coordinate: coordinate, postingUserID: postingUserID, placeDocumentID: placeDocumentID)
+                self.places.append(PlaceData(placeName: placeName, address: address, coordinate: coordinate, postingUserID: postingUserID, placeDocumentID: placeDocumentID))
             }
+            self.tableView.reloadData()
         }
     }
     
