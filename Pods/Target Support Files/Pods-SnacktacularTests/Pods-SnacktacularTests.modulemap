@@ -1,0 +1,6 @@
+framework module Pods_SnacktacularTests {
+  umbrella header "Pods-SnacktacularTests-umbrella.h"
+
+  export *
+  module * { export * }
+}
